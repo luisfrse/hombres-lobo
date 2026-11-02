@@ -1,0 +1,22 @@
+{
+  "name": "hombres-lobo",
+  "version": "1.0.0",
+  "description": "Hombres lobo / Homes llop: el juego de roles con narrador, para jugar en la misma sala",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/simulacion.js && node test/i18n.js && node test/navegador.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.3.0",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}

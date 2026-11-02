@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d1a">
+  <title data-i18n-doc="app.doc_narrador">Homes llop · Narrador</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/lobo.css">
+</head>
+<body class="narrador">
+  <header class="cab">
+    <h1 class="logo">🐺 <span data-i18n="app.nombre">Homes llop</span> <small data-i18n="n.titulo">Narrador</small></h1>
+    <div class="cab-idioma" data-lang-slot></div>
+  </header>
+  <main id="app"></main>
+  <div id="aviso" class="aviso" role="alert" hidden></div>
+  <script src="/i18n.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/comun.js"></script>
+  <script src="/js/narrador.js"></script>
+</body>
+</html>
