@@ -127,7 +127,10 @@ function generarCodigo() {
   return c;
 }
 function normalizarCodigo(texto) {
-  return String(texto == null ? '' : texto).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 32);
+  const t = String(texto == null ? '' : texto).toUpperCase().slice(0, 500);
+  // Si se pega el mensaje de invitación entero, se toma el código (formato XXXXX-XXXXX) de dentro
+  const m = t.match(/\b[A-Z2-9]{5}-[A-Z2-9]{5}\b/);
+  return (m ? m[0] : t).replace(/[^A-Z0-9]/g, '').slice(0, 32);
 }
 function formatearCodigo(c) { return c.length === 10 ? c.slice(0, 5) + '-' + c.slice(5) : c; }
 function hoyISO() { return new Date().toISOString().slice(0, 10); }

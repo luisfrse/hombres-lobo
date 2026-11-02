@@ -46,6 +46,11 @@ const ok = (m) => { n += 1; console.log('  ✓ ' + m); };
   const a1 = await acceder(ana.codigo.toLowerCase().replace('-', ' '));
   assert.strictEqual(a1.status, 200); assert.strictEqual(a1.d.etiqueta, 'Ana Prueba');
   const sesionAna = a1.d.token;
+  const pegado = await acceder('Hola, aquí tienes tu código para llevar partidas de Hombres lobo: ' + ana.codigo + '\nEntra en https://lobo.luisfs.com/narrador e introdúcelo.');
+  assert.strictEqual(pegado.status, 200, 'se acepta el mensaje de invitación pegado entero');
+  const dosDispositivos = await acceder(ana.codigo);
+  assert.strictEqual(dosDispositivos.status, 200, 'el mismo código sirve en varios dispositivos');
+  assert.notStrictEqual(dosDispositivos.d.token, a1.d.token);
   ok('códigos de invitación: /admin protegido y acceso con código');
 
   const nar = await conectar();

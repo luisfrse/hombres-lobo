@@ -20,7 +20,13 @@
   function guardarAcceso(a) { acceso = a; try { if (a) localStorage.setItem(CLAVE_ACCESO, JSON.stringify(a)); else localStorage.removeItem(CLAVE_ACCESO); } catch (e) { /* sin almacenamiento */ } }
 
   // Canjea un código de invitación por una sesión de narrador
+  function extraerCodigo(texto) {
+    var t = String(texto || '').toUpperCase().slice(0, 500);
+    var m = t.match(/\b[A-Z2-9]{5}-[A-Z2-9]{5}\b/);   // por si se pega el mensaje de invitación entero
+    return (m ? m[0] : t).replace(/[^A-Z0-9]/g, '').slice(0, 32);
+  }
   function entrarConCodigo(codigo) {
+    codigo = extraerCodigo(codigo);
     return fetch('/api/acceso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo: codigo }) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (x) {
@@ -140,7 +146,7 @@
 
   // ------------------------------------------------------------------ pantallas
   function pantallaAcceso() {
-    var campo = el('input', { id: 'codigo', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', maxlength: '16', value: codigoEscrito, 'aria-label': T('acc.codigo') });
+    var campo = el('input', { id: 'codigo', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', value: codigoEscrito, 'aria-label': T('acc.codigo') });
     campo.addEventListener('input', function () { codigoEscrito = campo.value; });
     var form = el('form', { class: 'tarjeta acceso', novalidate: true },
       el('h2', null, T('acc.titulo')),
