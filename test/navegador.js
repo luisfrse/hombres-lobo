@@ -153,6 +153,9 @@ const errores = [];
   ok('cada jugador ve su rol con su descripción (en su idioma) y puede ocultarlo');
 
   // --- Noche: vidente y lobo desde el panel del narrador ---
+  // Guion del narrador: qué decir en voz alta
+  const guionTxt = (await nar.textContent('[data-paso=vidente] .guion')).replace(/\s+/g, ' ');
+  for (const k of ['guion.apertura', 'guion.vidente.abre', 'guion.vidente.cierra']) assert.ok(guionTxt.includes(D.es[k]), 'guion: ' + k);
   const elegir = (nom) => nar.locator('.rejilla .opcion', { hasText: nom }).first().click();
   await elegir(lobo);
   await nar.click('.selector-idioma button[data-lang=ca]');
@@ -175,6 +178,8 @@ const errores = [];
   await nar.waitForSelector('.muertes li');
   assert.ok((await nar.textContent('.muertes li')).includes(ald1));
   assert.ok((await nar.textContent('.muertes li')).includes('devorado por los lobos'));
+  const amanecer = (await nar.textContent('.guion')).replace(/\s+/g, ' ');
+  assert.ok(amanecer.includes(D.es['guion.amanece_muertos#1'].replace('{j}', ald1)), 'guion de amanecer con el nombre del muerto');
   await jug[ald1].waitForSelector('.banda.eliminado');
   await jug[vidente].waitForSelector('.lista-jugadores li.muerto');
   assert.ok(await jug[vidente].isVisible('.banda.dia'));
@@ -199,6 +204,21 @@ const errores = [];
   await jug[ald2].waitForSelector('text=Estás dentro, ' + ald2);
   assert.ok(await sinDesborde(nar));
   ok('recarga de jugador y narrador sin perder la sesión; nueva partida con los mismos jugadores');
+
+  // --- Reglas del juego ---
+  assert.strictEqual(await jug[ald2].locator('a[href="/reglas"]').count(), 1, 'enlace a las reglas en la pantalla del jugador');
+  assert.strictEqual(await nar.locator('a[href="/reglas"]').count(), 1, 'enlace a las reglas en el panel del narrador');
+  const reg = await pagina(true);
+  await reg.goto(base + '/reglas?lang=es');
+  assert.strictEqual(await reg.locator('.rol-regla').count(), 9);
+  for (const r of ['aldeano', 'lobo', 'vidente', 'bruja', 'cazador', 'cupido', 'nina', 'salvador']) {
+    assert.strictEqual((await reg.textContent(`.rol-regla[data-rol=${r}] .descripcion`)).trim(), D.es[`rol.${r}.d`]);
+  }
+  assert.ok(await sinDesborde(reg));
+  await reg.click('.selector-idioma button[data-lang=ca]');
+  assert.strictEqual((await reg.textContent('.rol-regla[data-rol=bruja] .descripcion')).trim(), D.ca['rol.bruja.d']);
+  assert.ok((await reg.textContent('main')).includes(D.ca['reg.intro']));
+  ok('guion del narrador y página de reglas (CA/ES) enlazada desde jugador y narrador');
 
   // --- Revocar el código desde /admin cierra la partida abierta ---
   await adm.reload();

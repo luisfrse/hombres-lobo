@@ -24,7 +24,7 @@ for (const k of new Set([...Object.keys(ca), ...Object.keys(es)])) {
 }
 for (const k of Object.keys(ca)) if (k.includes('#') && ca[k.split('#')[0]] === undefined) falla('plural sin singular: ' + k);
 
-const fuentes = ['public/js/comun.js', 'public/js/jugador.js', 'public/js/narrador.js', 'public/js/admin.js', 'public/index.html', 'public/narrador.html', 'views/admin.html']
+const fuentes = ['public/js/comun.js', 'public/js/reglas.js', 'public/reglas.html', 'public/js/jugador.js', 'public/js/narrador.js', 'public/js/admin.js', 'public/index.html', 'public/narrador.html', 'views/admin.html']
   .map((f) => fs.readFileSync(path.join(raiz, f), 'utf8')).join('\n');
 const usadas = new Set();
 for (const m of fuentes.matchAll(/\b(?:T|t)\('([\w.]+)'\s*[,)]/g)) usadas.add(m[1]);
@@ -34,6 +34,7 @@ for (const k of usadas) if (ca[k] === undefined) falla('clave usada que no exist
 const ROLES = ['aldeano', 'lobo', 'vidente', 'bruja', 'cazador', 'cupido', 'nina', 'salvador'];
 for (const r of ROLES) for (const s of ['n', 'd']) if (!ca['rol.' + r + '.' + s]) falla('falta rol.' + r + '.' + s);
 for (const p of ['cupido', 'salvador', 'vidente', 'lobo', 'bruja']) if (!ca['n.paso.' + p]) falla('falta n.paso.' + p);
+for (const p of ['cupido', 'salvador', 'vidente', 'lobo', 'bruja']) for (const s of ['abre', 'cierra']) if (!ca['guion.' + p + '.' + s]) falla('falta guion.' + p + '.' + s);
 for (const g of ['pueblo', 'lobos', 'amantes']) if (!ca['g.' + g]) falla('falta g.' + g);
 for (const c of ['lobos', 'veneno', 'amor', 'cazador', 'votacion']) if (!ca['causa.' + c]) falla('falta causa.' + c);
 
@@ -41,7 +42,7 @@ const servidor = fs.readFileSync(path.join(raiz, 'server.js'), 'utf8');
 for (const m of servidor.matchAll(/err\('(\w+)'/g)) if (ca['e.' + m[1]] === undefined) falla('error sin traducir: e.' + m[1]);
 
 for (const r of ROLES) if (ca['rol.' + r + '.d'] === es['rol.' + r + '.d']) falla('descripción sin traducir: ' + r);
-const iguales = Object.keys(ca).filter((k) => ca[k] === es[k] && ca[k].length > 15 && k !== 'ac.caduca_opc');
+const iguales = Object.keys(ca).filter((k) => ca[k] === es[k] && ca[k].length > 15 && !['ac.caduca_opc', 'reg.fin.t'].includes(k));
 if (iguales.length) falla('textos largos idénticos en ca y es: ' + iguales.join(', '));
 
 if (fallos) { console.error('\n' + fallos + ' problemas'); process.exit(1); }

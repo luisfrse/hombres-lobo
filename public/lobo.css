@@ -170,3 +170,23 @@ input[type=date] { padding: .6rem .8rem; border-radius: 12px; border: 2px solid 
 .admin .btn.secundario { width: auto; }
 .acceso .codigo-mono, #codigo { text-transform: uppercase; letter-spacing: .15em; text-align: center; }
 .saludo { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; color: var(--suave); }
+
+/* Reglas y guion */
+.reglas .tarjeta p { line-height: 1.5; }
+.reglas .tarjeta p:last-child { margin-bottom: 0; }
+.lista { margin: 0; padding-left: 1.2rem; line-height: 1.6; }
+.orden { font-weight: 800; color: var(--acento); }
+.roles-lista { display: flex; flex-direction: column; gap: .8rem; margin-top: .6rem; }
+.rol-regla { display: flex; gap: .9rem; align-items: flex-start; background: var(--fondo); border: 1px solid var(--linea); border-radius: 12px; padding: .8rem 1rem; }
+.rol-regla .icono { font-size: 2rem; line-height: 1; }
+.rol-regla h3 { margin: 0 0 .2rem; font-size: 1.1rem; }
+.rol-regla .descripcion { margin: 0; font-size: .95rem; }
+.equipo { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; border-radius: 999px; padding: .1rem .5rem; margin-left: .3rem; vertical-align: middle; }
+.equipo.pueblo { background: #123a26; color: #7be0a4; }
+.equipo.lobos { background: #451019; color: #ff8a9a; }
+.guion { border-left: 4px solid var(--acento); background: var(--fondo); border-radius: 0 12px 12px 0; padding: .6rem .9rem; }
+.guion summary { margin: 0; }
+.guion[open] summary { margin-bottom: .5rem; }
+.guion .rotulo { display: block; font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--acento); margin-top: .5rem; }
+.guion q { display: block; font-style: italic; line-height: 1.45; quotes: "“" "”"; }
+.pie { text-align: center; padding: 0 1rem 2rem; max-width: 880px; margin: 0 auto; }

@@ -114,6 +114,16 @@
     pintar();
   }
 
+  // Frases para decir en voz alta. lineas: [{ rot: T(...)|null, txt: T(...) }]. El estado abierto/cerrado se conserva.
+  var guionAbierto = true;
+  function guion(lineas) {
+    var d = el('details', { class: 'guion', open: guionAbierto },
+      el('summary', null, '📣 ', T('guion.titulo')),
+      lineas.map(function (l) { return [l.rot ? el('span', { class: 'rotulo' }, l.rot) : null, el('q', null, l.txt)]; }));
+    d.addEventListener('toggle', function () { guionAbierto = d.open; });
+    return d;
+  }
+
   function etiquetaRol(r, clave) {
     return el('span', { class: 'etiqueta-rol' }, (Lobo.ICONOS[r] || '') + ' ', Lobo.nombreRol(r));
   }
@@ -270,6 +280,11 @@
       el('h2', null, (Lobo.ICONOS[rolPaso] || '') + ' ', T('n.paso.' + id), ' ', Lobo.botonInfo(rolPaso, 'noche', pintar)),
       Lobo.descripcionAbierta(rolPaso, 'noche')
     );
+    var lineas = [];
+    if (estado.paso === 0) lineas.push({ rot: null, txt: T(estado.noche === 1 ? 'guion.apertura' : 'guion.noche') });
+    lineas.push({ rot: T('guion.al_empezar'), txt: T('guion.' + id + '.abre') });
+    lineas.push({ rot: T('guion.al_acabar'), txt: T('guion.' + id + '.cierra') });
+    tarjeta.appendChild(guion(lineas));
     var controles = [];
     if (!a.vivo) {
       controles.push(el('p', { class: 'aviso-interno' }, T('n.muerto_aviso')));
@@ -315,10 +330,13 @@
   function pantallaDia() {
     var p = estado.pendientes[0];
     reiniciarSeleccion('d' + estado.noche + ':' + estado.pendientes.length + ':' + estado.votoHecho);
-    var piezas = [el('section', { class: 'tarjeta' }, el('h2', null, '☀️ ', T('n.amanece')), listaMuertes())];
+    var deNoche = estado.anuncio.filter(function (m) { return m.causa !== 'votacion'; }).map(function (m) { return nombreDe(m.j); });
+    var textoAmanecer = deNoche.length ? T('guion.amanece_muertos', { n: deNoche.length, j: deNoche.join(', ') }) : T('guion.amanece_nadie');
+    var piezas = [el('section', { class: 'tarjeta' }, el('h2', null, '☀️ ', T('n.amanece')), guion([{ rot: null, txt: textoAmanecer }]), listaMuertes())];
 
     if (p) {
       var cuerpo = [el('h3', null, p.tipo === 'cazador' ? '🏹 ' : '🎖️ ', p.tipo === 'cazador' ? T('n.pend_cazador', { j: nombreDe(p.jugador) }) : T('n.pend_alguacil', { j: nombreDe(p.jugador) })),
+        guion([{ rot: null, txt: T(p.tipo === 'cazador' ? 'guion.cazador' : 'guion.alguacil', { j: nombreDe(p.jugador) }) }]),
         rejilla(vivos(), 1, true),
         el('button', { type: 'button', class: 'btn', id: 'resolver', onclick: function () { llamar('narrador:pendiente', { objetivo: ui.sel[0] || null }); } }, T('n.confirmar'))];
       piezas.push(el('section', { class: 'tarjeta pendiente' }, cuerpo));
@@ -328,6 +346,7 @@
         piezas.push(el('section', { class: 'tarjeta', id: 'seccion-alguacil' },
           el('h3', null, '🎖️ ', T('n.alguacil_titulo')),
           el('p', null, alg ? T('n.alguacil_actual', { j: alg.nombre }) : T('n.alguacil_ninguno')),
+          alg ? null : el('p', { class: 'pista' }, T('guion.alguacil_nombrar')),
           el('details', null,
             el('summary', null, T('n.nombrar')),
             rejilla(vivos(), 1, false),
@@ -336,6 +355,7 @@
         ));
         piezas.push(el('section', { class: 'tarjeta', id: 'seccion-voto' },
           el('h3', null, '🗳️ ', T('n.votacion')),
+          guion([{ rot: null, txt: T('guion.votacion') }]),
           el('p', { class: 'pista' }, T('n.votacion_ayuda')),
           rejilla(vivos(), 1, true),
           el('button', { type: 'button', class: 'btn peligro', id: 'votar', onclick: function () { llamar('narrador:votar', { objetivo: ui.sel[0] || null }); } }, ui.sel.length ? T('n.eliminar') : T('n.confirmar'))
@@ -351,6 +371,7 @@
   function pantallaFinal() {
     return [
       el('section', { class: 'banda final ' + estado.ganador }, el('h2', null, T('g.' + estado.ganador)), listaMuertes()),
+      el('section', { class: 'tarjeta' }, guion([{ rot: null, txt: T('guion.fin') }])),
       el('section', { class: 'tarjeta' }, tablaJugadores()),
       el('section', { class: 'centro' },
         el('button', { type: 'button', class: 'btn grande', id: 'otra', onclick: function () { llamar('narrador:nueva'); } }, T('n.otra')),
