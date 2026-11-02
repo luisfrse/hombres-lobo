@@ -57,7 +57,7 @@ npm install
 ADMIN_PASSWORD=una-clave-larga npm start
 ```
 
-En Coolify: repositorio nuevo, build con Nixpacks, puerto 3000, dominio propio (por ejemplo `lobo.luisfs.com`), variable `ADMIN_PASSWORD` y un volumen persistente montado en `/data` con `DATA_DIR=/data` (si no, los códigos se pierden al redesplegar).
+En Coolify: repositorio nuevo, Build Pack **Dockerfile** (incluido; Nixpacks ya no hace falta), puerto 3000, dominio propio (por ejemplo `lobo.luisfs.com`), variable `ADMIN_PASSWORD` y un volumen persistente montado en `/data` con `DATA_DIR=/data` (si no, los códigos se pierden al redesplegar).
 
 ## Seguridad
 - Límites por IP en memoria (429/`demasiados_intentos`): 5 códigos de invitación erróneos cada 15 min, 5 contraseñas de `/admin` erróneas cada 15 min (el bloqueo se mantiene aunque se envíe la buena) y 40 PIN erróneos cada 10 min. Detrás de un proxy se confía en una sola cabecera `X-Forwarded-For`.
