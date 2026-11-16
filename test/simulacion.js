@@ -6,6 +6,9 @@ const os = require('os');
 const path = require('path');
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'lobo-test-'));
 process.env.ADMIN_PASSWORD = 'clave-de-prueba';
+const TOKEN_API = 'token-api-de-prueba-0123456789abcdef';
+process.env.ADMIN_API_TOKEN = TOKEN_API;
+const { spawn } = require('child_process');
 const { io: cliente } = require('socket.io-client');
 const { server, partidas } = require('../server');
 
@@ -39,6 +42,36 @@ const ok = (m) => { n += 1; console.log('  ✓ ' + m); };
   assert.strictEqual((await api('/api/admin/codigos', 'GET', null, null)).status, 401);
   assert.strictEqual((await api('/api/admin/codigos', 'POST', { etiqueta: '' })).status, 400);
   assert.strictEqual((await api('/admin')).status, 200);
+  // token de API (solo para la API de códigos)
+  const BT = (t) => 'Bearer ' + t;
+  const conIp = (ruta, metodo, cuerpo, auth) => fetch(url + ruta, { method: metodo, headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': '198.51.100.7', ...(auth ? { Authorization: auth } : {}) }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
+  assert.strictEqual((await conIp('/api/admin/codigos', 'GET', null, BT(TOKEN_API))).status, 200, 'token correcto');
+  assert.strictEqual((await conIp('/api/admin/codigos', 'GET', null, BT(TOKEN_API + 'x'))).status, 401, 'token incorrecto');
+  assert.strictEqual((await conIp('/api/admin/codigos', 'GET', null, BT(''))).status, 401, 'Bearer vacío');
+  assert.strictEqual((await conIp('/admin', 'GET', null, BT(TOKEN_API))).status, 401, 'el token no vale en /admin');
+  assert.strictEqual((await conIp('/api/admin/estado', 'GET', null, BT(TOKEN_API))).status, 401, 'ni en /api/admin/estado');
+  const porToken = await (await conIp('/api/admin/codigos', 'POST', { etiqueta: 'Por token' }, BT(TOKEN_API))).json();
+  assert.ok(porToken.id);
+  assert.strictEqual((await conIp('/api/admin/codigos/' + porToken.id, 'PATCH', { revocado: true }, BT(TOKEN_API))).status, 200);
+  assert.strictEqual((await conIp('/api/admin/codigos/' + porToken.id, 'DELETE', null, BT(TOKEN_API))).status, 200);
+  assert.strictEqual((await conIp('/api/admin/codigos', 'GET', null, AUTH)).status, 200, 'la contraseña de siempre sigue valiendo');
+  for (let i = 0; i < 5; i++) await conIp('/api/admin/codigos', 'GET', null, BT('malo' + i));
+  assert.strictEqual((await conIp('/api/admin/codigos', 'GET', null, BT(TOKEN_API))).status, 429, 'el token comparte el límite de intentos');
+  for (const [tok, que] of [[undefined, 'sin variable'], ['corto-123', 'con token de menos de 24 caracteres']]) {
+    const env2 = { ...process.env, PORT: '3187', DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'lobo-test2-')) };
+    delete env2.ADMIN_API_TOKEN; if (tok) env2.ADMIN_API_TOKEN = tok;
+    const s2 = spawn('node', ['server.js'], { cwd: path.join(__dirname, '..'), env: env2, stdio: ['ignore', 'pipe', 'pipe'] });
+    let log2 = ''; s2.stdout.on('data', (d) => { log2 += d; }); s2.stderr.on('data', (d) => { log2 += d; });
+    try {
+      for (let i = 0; i < 100 && !log2.includes('Escuchando'); i++) await pausa(100);
+      assert.ok(log2.includes('Escuchando'), 'arranque 2');
+      const b2 = 'http://127.0.0.1:3187';
+      assert.strictEqual((await fetch(b2 + '/api/admin/codigos', { headers: { Authorization: BT(tok || TOKEN_API) } })).status, 401, que);
+      assert.strictEqual((await fetch(b2 + '/api/admin/codigos', { headers: { Authorization: AUTH } })).status, 200);
+      assert.ok(!log2.includes(tok || TOKEN_API));
+    } finally { s2.kill(); await pausa(300); }
+  }
+  ok('token de API: correcto, incorrecto, límite compartido, desactivado sin variable o con token corto, y la contraseña sigue valiendo');
   const crearCodigo = async (etiqueta) => (await api('/api/admin/codigos', 'POST', { etiqueta })).json();
   const acceder = async (codigo) => { const r = await api('/api/acceso', 'POST', { codigo }, null); return { status: r.status, d: await r.json() }; };
   const ana = await crearCodigo('Ana Prueba');
