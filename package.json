@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test/simulacion.js && node test/i18n.js && node test/navegador.js"
+    "test": "node test/simulacion.js && node test/i18n.js && node test/navegador.js && node test/control-sso.js",
+    "test:control-sso": "node test/control-sso.js"
   },
   "engines": {
     "node": ">=22"
