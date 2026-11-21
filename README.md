@@ -72,3 +72,9 @@ Todo el texto sale de `public/i18n.js` (generado a partir de `tools/claves.py` y
 
 ## Pruebas
 `npm test` ejecuta: `test/simulacion.js` (partidas completas con sockets: privacidad, noche, cazador, enamorados, alguacil, brujería, reconexión), `test/i18n.js` y `test/navegador.js` (narrador + 4 móviles en Chromium, ⓘ, tarjeta de rol, cambio de idioma sin perder estado, sin errores de consola).
+
+## Diseño común
+- `public/dc/` es una copia del diseño común (`../diseno-comun`); se actualiza con `npm run dc` (ver `public/dc/VERSION.json`). Estilos propios en `public/lobo.css`; tema claro/oscuro automático con selector (de noche la partida pasa sola al tema oscuro).
+- Los repintados por socket comparan el árbol nuevo con el que hay en pantalla (`Lobo.pintarEn` en `public/js/comun.js`): no se pierde foco, cursor, scroll ni lo escrito. Los manejadores de eventos usan `Lobo.on` y leen el valor con `this`, no con variables del repintado.
+- `/admin` sin credenciales y desde un navegador muestra la pantalla de entrada común (contraseña, intentos restantes, espera). La contraseña HTTP básica y el token de API siguen valiendo para scripts.
+- `npm run e2e` (Chrome real: admin, narrador, jugador y una partida completa) y `npm run capturas` (390 y 1200 px, claro y oscuro, datos inventados en `docs/capturas/`, no versionadas).

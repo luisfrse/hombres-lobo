@@ -2,18 +2,26 @@
 <html lang="ca">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0d1a">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0d1a2a">
   <title data-i18n-doc="reg.doc">Homes llop · Regles</title>
-  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/dc/fuentes/fuentes.css">
+  <link rel="stylesheet" href="/dc/tokens.css">
+  <link rel="stylesheet" href="/dc/base.css">
   <link rel="stylesheet" href="/lobo.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script src="/tema.js"></script>
 </head>
-<body class="reglas">
-  <header class="cab">
-    <h1 class="logo">🐺 <span data-i18n="app.nombre">Homes llop</span> <small data-i18n="reg.titulo">Com es juga</small></h1>
-    <div class="cab-idioma" data-lang-slot></div>
+<body class="dc-body reglas">
+  <header class="dc-header">
+    <a class="dc-brand" href="/"><span class="dc-brand__tile"><span class="dc-icon" data-icon="moon" aria-hidden="true"></span></span><span><span data-i18n="app.nombre">Homes llop</span> <small class="dc-muted-h" data-i18n="reg.titulo">Com es juga</small></span></a>
+    <div class="dc-header__actions"><div class="cab-idioma" data-lang-slot></div><div id="tema-slot"></div></div>
   </header>
-  <main>
+  <main class="lb-main lb-reglas">
     <section class="tarjeta"><p data-i18n="reg.intro"></p></section>
     <section class="tarjeta">
       <h2 data-i18n="reg.obj.t"></h2>
@@ -29,13 +37,13 @@
       <p data-i18n="reg.lobos_num"></p>
     </section>
     <section class="tarjeta">
-      <h2>🌙 <span data-i18n="reg.noche.t"></span></h2>
+      <h2><span class="dc-icon" data-icon="moon" aria-hidden="true"></span> <span data-i18n="reg.noche.t"></span></h2>
       <p data-i18n="reg.noche.p1"></p>
       <p class="orden" data-i18n="reg.noche.orden"></p>
       <p data-i18n="reg.noche.p2"></p>
     </section>
     <section class="tarjeta">
-      <h2>☀️ <span data-i18n="reg.dia.t"></span></h2>
+      <h2><span class="dc-icon" data-icon="sun" aria-hidden="true"></span> <span data-i18n="reg.dia.t"></span></h2>
       <p data-i18n="reg.dia.p1"></p>
       <p data-i18n="reg.dia.p2"></p>
       <p data-i18n="reg.dia.p3"></p>
@@ -58,7 +66,9 @@
       <div id="roles" class="roles-lista"></div>
     </section>
   </main>
+  <script src="/dc/iconos/iconos.js"></script>
   <script src="/i18n.js"></script>
+  <script src="/js/iconos-lobo.js"></script>
   <script src="/js/comun.js"></script>
   <script src="/js/reglas.js"></script>
 </body>

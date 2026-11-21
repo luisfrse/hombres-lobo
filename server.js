@@ -63,6 +63,8 @@ function limitador(maximo, ventanaMs) {
       else e.n += 1;
     },
     exito(ip) { mapa.delete(ip); },
+    restantes(ip) { const e = mapa.get(ip); return e && Date.now() - e.desde <= ventanaMs ? Math.max(0, maximo - e.n) : maximo; },
+    espera(ip) { const e = mapa.get(ip); return e ? Math.max(1, Math.ceil((e.desde + ventanaMs - Date.now()) / 1000)) : 0; },
     purgar() {
       const ahora = Date.now();
       for (const [ip, e] of mapa) if (ahora - e.desde > ventanaMs) mapa.delete(ip);
@@ -452,8 +454,8 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
-    "connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; " +
+    "connect-src 'self' ws: wss:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
   );
   next();
 });
@@ -518,6 +520,25 @@ app.get('/api/control/sso', (req, res) => {
   res.redirect('/admin');
 });
 
+// Pantalla de entrada del administrador: misma contrasena y mismo limite de intentos; abre la misma sesion por cookie que el acceso unico de Control.
+app.get('/api/admin-entrada/estado', (req, res) => { const a = adminSesionValida(req); res.setHeader('Cache-Control', 'no-store'); res.json({ authed: a, unlocked: a, hasPin: false, passkeys: 0, configured: true, needsSetup: false }); });
+app.post('/api/admin-entrada/login', express.json({ limit: '2kb' }), (req, res) => {
+  const ip = ipDeCabecera(req.headers['x-forwarded-for'], req.socket.remoteAddress);
+  res.setHeader('Cache-Control', 'no-store');
+  if (limAdmin.bloqueado(ip)) return res.status(429).json({ error: 'rate', wait: limAdmin.espera(ip) });
+  const clave = req.body && typeof req.body.password === 'string' ? req.body.password : '';
+  if (!iguales(clave, ADMIN_PASSWORD)) { limAdmin.fallo(ip); return res.status(401).json({ error: 'bad', left: limAdmin.restantes(ip) }); }
+  limAdmin.exito(ip);
+  const t = crypto.randomBytes(24).toString('hex');
+  adminSesiones.set(t, Date.now() + ADMIN_SESION_MS);
+  res.setHeader('Set-Cookie', adminCookieSesion(req, t, ADMIN_SESION_MS / 1000));
+  res.json({ ok: true });
+});
+app.post('/api/admin-entrada/logout', (req, res) => {
+  const t = adminLeerCookie(req, 'asid'); if (t) adminSesiones.delete(t);
+  res.setHeader('Set-Cookie', adminCookieSesion(req, '', 0)); res.setHeader('Cache-Control', 'no-store'); res.json({ ok: true });
+});
+
 // Token de API opcional (solo para la API de codigos de invitacion): Authorization: Bearer <ADMIN_API_TOKEN>.
 // Desactivado si la variable no existe o tiene menos de 24 caracteres. Comparte el limite de intentos de la contrasena.
 const ADMIN_API_TOKEN = (process.env.ADMIN_API_TOKEN || '').length >= 24 ? process.env.ADMIN_API_TOKEN : '';
@@ -535,12 +556,12 @@ app.get('/api/config', (req, res) => res.json({ contactUrl: CONTACT_URL }));
 
 app.post('/api/acceso', express.json({ limit: '2kb' }), (req, res) => {
   const ip = ipDeCabecera(req.headers['x-forwarded-for'], req.socket.remoteAddress);
-  if (limAcceso.bloqueado(ip)) return res.status(429).json({ error: 'demasiados_intentos' });
+  if (limAcceso.bloqueado(ip)) return res.status(429).json({ error: 'demasiados_intentos', espera: limAcceso.espera(ip) });
   const codigo = normalizarCodigo(req.body && req.body.codigo);
   const fila = codigo ? db.prepare('SELECT * FROM codigos WHERE codigo = ?').get(codigo) : null;
   if (!fila || estadoCodigo(fila) !== 'activo') {
     limAcceso.fallo(ip);
-    return res.status(401).json({ error: 'codigo_invalido' });
+    return res.status(401).json({ error: 'codigo_invalido', quedan: limAcceso.restantes(ip) });
   }
   limAcceso.exito(ip);
   res.json({ token: crearSesion(fila), etiqueta: fila.etiqueta, contactUrl: CONTACT_URL });
@@ -617,12 +638,17 @@ app.get('/api/admin/estado', requiereClaveAdmin, (req, res) => {
   res.json({ partidasActivas: activas, jugadoresEnPartidas: jugadores, limites: LIMITES });
 });
 
+app.get('/admin', (req, res, next) => {
+  // sin credenciales y desde un navegador: pantalla de entrada (sin el dialogo del navegador); scripts y curl siguen recibiendo el desafio HTTP basica
+  if (!adminSesionValida(req) && !req.headers.authorization && /text\/html/.test(req.headers.accept || '')) return res.status(401).set('Cache-Control', 'no-store').sendFile(path.join(__dirname, 'views', 'entrada.html'));
+  next();
+});
 app.get('/admin', requiereClaveAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin.html')));
 
 const PUBLICO = path.join(__dirname, 'public');
 app.get('/healthz', (req, res) => res.type('text/plain').send('ok'));
 app.get('/narrador', (req, res) => res.sendFile(path.join(PUBLICO, 'narrador.html')));
-app.use(express.static(PUBLICO, { index: 'index.html', extensions: ['html'] }));
+app.use(express.static(PUBLICO, { index: 'index.html', extensions: ['html'], setHeaders(res, f) { if (f.endsWith('.woff2')) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); } }));
 app.use((e, req, res, next) => {
   if (res.headersSent) return next(e);
   res.status(400).json({ error: 'peticion_invalida' });

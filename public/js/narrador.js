@@ -30,7 +30,7 @@
     return fetch('/api/acceso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo: codigo }) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (x) {
-        if (!x.ok) throw { error: x.d.error || 'generico' };
+        if (!x.ok) throw { error: x.d.error || 'generico', quedan: x.d.quedan, espera: x.d.espera };
         guardarAcceso({ codigo: codigo, token: x.d.token, etiqueta: x.d.etiqueta });
         if (x.d.contactUrl) contactUrl = x.d.contactUrl;
       });
@@ -98,7 +98,7 @@
         type: 'button', class: 'opcion' + (on ? ' marcado' : ''), 'data-id': j.id, 'aria-pressed': on ? 'true' : 'false',
         disabled: prohibido === j.id,
         onclick: function () { alternar(j.id, max); },
-      }, (j.alguacil ? '🎖️ ' : '') + j.nombre, el('small', null, ' ' + (Lobo.ICONOS[j.rol] || '')));
+      }, j.alguacil ? [Lobo.icono('medal'), ' '] : null, j.nombre, el('small', null, ' ', j.rol ? Lobo.icRol(j.rol) : null));
     });
     if (conNadie) {
       var on0 = ui.sel.length === 0;
@@ -118,14 +118,14 @@
   var guionAbierto = true;
   function guion(lineas) {
     var d = el('details', { class: 'guion', open: guionAbierto },
-      el('summary', null, '📣 ', T('guion.titulo')),
+      el('summary', null, Lobo.icono('megaphone'), ' ', T('guion.titulo')),
       lineas.map(function (l) { return [l.rot ? el('span', { class: 'rotulo' }, l.rot) : null, el('q', null, l.txt)]; }));
-    d.addEventListener('toggle', function () { guionAbierto = d.open; });
+    Lobo.on(d, 'toggle', function () { guionAbierto = this.open; });
     return d;
   }
 
   function etiquetaRol(r, clave) {
-    return el('span', { class: 'etiqueta-rol' }, (Lobo.ICONOS[r] || '') + ' ', Lobo.nombreRol(r));
+    return el('span', { class: 'etiqueta-rol' }, Lobo.icRol(r), ' ', Lobo.nombreRol(r));
   }
 
   function tablaJugadores() {
@@ -137,8 +137,8 @@
           el('td', null, j.rol ? etiquetaRol(j.rol) : '—'),
           el('td', null,
             j.vivo ? T('n.vivo') : T('n.muerto'),
-            j.alguacil ? el('span', { class: 'marca', title: T('n.alguacil_marca') }, ' 🎖️') : null,
-            j.amor ? el('span', { class: 'marca', title: T('n.amor_marca') }, ' 💘') : null,
+            j.alguacil ? el('span', { class: 'marca', title: T('n.alguacil_marca') }, ' ', Lobo.icono('medal')) : null,
+            j.amor ? el('span', { class: 'marca', title: T('n.amor_marca') }, ' ', Lobo.icono('heart')) : null,
             j.conectado ? null : el('small', { class: 'desc' }, ' · ', T('n.desconectado'))
           ));
       })));
@@ -147,26 +147,31 @@
   function cabPartida() {
     return el('section', { class: 'barra-partida' },
       el('span', { class: 'pin-chico' }, 'PIN ', el('strong', null, estado.pin)),
-      estado.fase === 'noche' ? el('span', { class: 'fase noche' }, '🌙 ', T('n.noche_n', { n: estado.noche })) : null,
-      estado.fase === 'dia' ? el('span', { class: 'fase dia' }, '☀️ ', T('n.dia_n', { n: estado.noche })) : null,
+      estado.fase === 'noche' ? el('span', { class: 'fase noche' }, Lobo.icono('moon'), ' ', T('n.noche_n', { n: estado.noche })) : null,
+      estado.fase === 'dia' ? el('span', { class: 'fase dia' }, Lobo.icono('sun'), ' ', T('n.dia_n', { n: estado.noche })) : null,
       el('span', { class: 'fase' }, T('n.vivos', { n: vivos().length })),
-      el('button', { type: 'button', class: 'btn-texto', id: 'cerrar', onclick: function () { if (confirm(t('n.confirm_cerrar'))) llamar('narrador:cerrar', {}, function () { guardar(null); estado = null; pintar(); }); } }, T('n.cerrar'))
+      el('button', { type: 'button', class: 'btn-texto', id: 'cerrar', onclick: function () { Lobo.confirmar({ titulo: T('n.confirm_cerrar_t'), texto: T('n.confirm_cerrar'), ok: T('n.cerrar'), peligro: true }).then(function (si) { if (si) llamar('narrador:cerrar', {}, function () { guardar(null); estado = null; pintar(); }); }); } }, T('n.cerrar'))
     );
   }
 
   // ------------------------------------------------------------------ pantallas
   function pantallaAcceso() {
-    var campo = el('input', { id: 'codigo', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', value: codigoEscrito, 'aria-label': T('acc.codigo') });
-    campo.addEventListener('input', function () { codigoEscrito = campo.value; });
-    var form = el('form', { class: 'tarjeta acceso', novalidate: true },
-      el('h2', null, T('acc.titulo')),
-      el('p', null, T('acc.intro')),
+    var campo = el('input', { id: 'codigo', class: 'dc-input dc-input--code', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', value: codigoEscrito, 'aria-label': T('acc.codigo') });
+    Lobo.on(campo, 'input', function () { codigoEscrito = this.value; });
+    var textoErr = null;
+    if (errorAcceso) {
+      textoErr = [Lobo.textoError(errorAcceso)];
+      if (errorAcceso.error === 'codigo_invalido' && errorAcceso.quedan != null) textoErr.push(' ', errorAcceso.quedan === 1 ? T('acc.queda1') : T('acc.quedan', { n: errorAcceso.quedan }));
+      if (errorAcceso.error === 'demasiados_intentos' && errorAcceso.espera) textoErr = [T('acc.espera', { m: Math.max(1, Math.ceil(errorAcceso.espera / 60)) })];
+    }
+    var form = el('form', { class: 'tarjeta acceso entrada', novalidate: true },
+      el('div', { class: 'entrada-cab' }, el('span', { class: 'dc-brand__tile dc-brand--lg' }, Lobo.icono('key')), el('h2', null, T('acc.titulo')), el('p', null, T('acc.intro'))),
       el('label', { class: 'campo' }, el('span', null, T('acc.codigo')), campo),
+      el('div', { class: 'mensaje', 'aria-live': 'assertive' }, textoErr ? el('p', { class: 'error', role: 'alert' }, Lobo.icono('x-circle'), el('span', null, textoErr)) : null),
       el('button', { class: 'btn grande', type: 'submit', id: 'entrar', disabled: comprobando }, T('acc.entrar')),
-      errorAcceso ? el('p', { class: 'error', role: 'alert' }, Lobo.textoError(errorAcceso)) : null,
       el('p', { class: 'enlace pista' }, T('acc.sin_codigo'), ' ', el('a', { href: contactUrl, target: '_blank', rel: 'noopener' }, T('acc.solicitar')))
     );
-    form.addEventListener('submit', function (ev) {
+    Lobo.on(form, 'submit', function (ev) {
       ev.preventDefault();
       comprobando = true; errorAcceso = null; pintar();
       entrarConCodigo(codigoEscrito).then(function () { comprobando = false; codigoEscrito = ''; pintar(); })
@@ -190,7 +195,7 @@
   function fichaRol(r, extra) {
     var fila = el('div', { class: 'rol-fila' },
       extra || null,
-      el('span', { class: 'rol-nombre' }, (Lobo.ICONOS[r] || '') + ' ', Lobo.nombreRol(r)),
+      el('span', { class: 'rol-nombre' }, Lobo.icRol(r), ' ', Lobo.nombreRol(r)),
       Lobo.botonInfo(r, 'cfg', pintar)
     );
     return el('div', { class: 'rol-item', 'data-rol': r }, fila, Lobo.descripcionAbierta(r, 'cfg'));
@@ -215,18 +220,18 @@
         return el('li', { class: j.conectado ? 'vivo' : 'muerto', 'data-id': j.id },
           el('span', { class: 'nombre' }, j.nombre),
           el('button', { type: 'button', class: 'btn-texto expulsar', 'aria-label': T('n.expulsar'), title: T('n.expulsar'), onclick: function () {
-            if (confirm(t('n.confirm_expulsar', { j: j.nombre }))) llamar('narrador:expulsar', { id: j.id });
-          } }, '✕'));
+            Lobo.confirmar({ titulo: T('n.confirm_expulsar_t'), texto: T('n.confirm_expulsar', { j: j.nombre }), ok: T('n.expulsar'), peligro: true }).then(function (si) { if (si) llamar('narrador:expulsar', { id: j.id }); });
+          } }, Lobo.icono('x')));
       }))
     );
 
     var lobos = el('div', { class: 'rol-item', 'data-rol': 'lobo' },
       el('div', { class: 'rol-fila' },
-        el('span', { class: 'rol-nombre' }, '🐺 ', T('n.lobos')),
+        el('span', { class: 'rol-nombre' }, Lobo.icRol('lobo'), ' ', T('n.lobos')),
         el('span', { class: 'paso-num' },
-          el('button', { type: 'button', class: 'mini', id: 'lobos-menos', 'aria-label': T('n.menos'), disabled: c.lobos <= 1, onclick: function () { llamar('narrador:config', { lobos: c.lobos - 1 }); } }, '−'),
+          el('button', { type: 'button', class: 'mini', id: 'lobos-menos', 'aria-label': T('n.menos'), disabled: c.lobos <= 1, onclick: function () { llamar('narrador:config', { lobos: c.lobos - 1 }); } }, Lobo.icono('minus')),
           el('output', { id: 'lobos-n' }, String(c.lobos)),
-          el('button', { type: 'button', class: 'mini', id: 'lobos-mas', 'aria-label': T('n.mas'), disabled: c.lobos >= 10, onclick: function () { llamar('narrador:config', { lobos: c.lobos + 1 }); } }, '+')
+          el('button', { type: 'button', class: 'mini', id: 'lobos-mas', 'aria-label': T('n.mas'), disabled: c.lobos >= 10, onclick: function () { llamar('narrador:config', { lobos: c.lobos + 1 }); } }, Lobo.icono('plus'))
         ),
         Lobo.botonInfo('lobo', 'cfg', pintar)
       ),
@@ -236,12 +241,12 @@
     var especialesUI = Lobo.ESPECIALES.map(function (r) {
       var cb = el('input', { type: 'checkbox', id: 'rol-' + r, 'aria-label': T('n.activar', { r: rn(r) }) });
       cb.checked = !!c.roles[r];
-      cb.addEventListener('change', function () { var o = {}; o[r] = cb.checked; llamar('narrador:config', { roles: o }); });
+      Lobo.on(cb, 'change', function () { var o = {}; o[r] = this.checked; llamar('narrador:config', { roles: o }); });
       return fichaRol(r, cb);
     });
     var revelar = el('input', { type: 'checkbox', id: 'revelar' });
     revelar.checked = !!c.revelar;
-    revelar.addEventListener('change', function () { llamar('narrador:config', { revelar: revelar.checked }); });
+    Lobo.on(revelar, 'change', function () { llamar('narrador:config', { revelar: this.checked }); });
 
     var config = el('section', { class: 'tarjeta' },
       el('h3', null, T('n.config')),
@@ -275,9 +280,10 @@
       else ui.sel = (a.acc || []).slice();
     }
     var rolPaso = id; // el paso 'lobo' corresponde al rol lobo
+    var anilloPaso = Lobo.anillo('anillo--paso'); anilloPaso.poner((estado.paso + 1) / estado.pasos.length, (estado.paso + 1) + '/' + estado.pasos.length, '', t('n.ring_paso', { i: estado.paso + 1, n: estado.pasos.length }));
     var tarjeta = el('section', { class: 'tarjeta paso', 'data-paso': id },
       el('small', { class: 'pista' }, T('n.paso_n', { i: estado.paso + 1, n: estado.pasos.length })),
-      el('h2', null, (Lobo.ICONOS[rolPaso] || '') + ' ', T('n.paso.' + id), ' ', Lobo.botonInfo(rolPaso, 'noche', pintar)),
+      el('div', { class: 'paso-cab' }, anilloPaso, el('h2', null, Lobo.icRol(rolPaso), ' ', T('n.paso.' + id), ' ', Lobo.botonInfo(rolPaso, 'noche', pintar))),
       Lobo.descripcionAbierta(rolPaso, 'noche')
     );
     var lineas = [];
@@ -310,10 +316,10 @@
       controles.push(el('button', { type: 'button', class: 'btn', id: 'confirmar', onclick: function () { llamar('narrador:accion', { objetivos: ui.sel }); } }, T('n.confirmar')));
     }
     if (a.hecho && a.vivo) {
-      controles.push(el('p', { class: 'hecho' }, '✔ ', a.acc && a.acc.length !== undefined ? a.acc.map(nombreDe).join(', ') || t('n.nadie') : ''));
+      controles.push(el('p', { class: 'hecho' }, Lobo.icono('check-circle'), ' ', a.acc && a.acc.length !== undefined ? a.acc.map(nombreDe).join(', ') || t('n.nadie') : ''));
     }
     if (a.vision) {
-      controles.push(el('div', { class: 'vision' }, el('p', null, T('n.vision', { j: nombreDe(a.vision.j) })), el('h3', null, (Lobo.ICONOS[a.vision.rol] || '') + ' ', Lobo.nombreRol(a.vision.rol)), el('p', { class: 'pista' }, T('n.vision_aviso'))));
+      controles.push(el('div', { class: 'vision' }, el('p', null, T('n.vision', { j: nombreDe(a.vision.j) })), el('h3', null, Lobo.icRol(a.vision.rol), ' ', Lobo.nombreRol(a.vision.rol)), el('p', { class: 'pista' }, T('n.vision_aviso'))));
     }
     controles.push(el('button', { type: 'button', class: 'btn siguiente', id: 'siguiente', disabled: a.vivo && !a.hecho, onclick: function () { llamar('narrador:siguiente'); } }, T('n.siguiente')));
     tarjeta.appendChild(el('div', { class: 'controles' }, controles));
@@ -323,7 +329,7 @@
   function listaMuertes() {
     if (!estado.anuncio.length) return el('p', { class: 'pista' }, T('n.nadie_murio'));
     return el('ul', { class: 'muertes' }, estado.anuncio.map(function (m) {
-      return el('li', { 'data-id': m.j }, '💀 ', T('n.murio', { j: nombreDe(m.j), c: t('causa.' + m.causa) }));
+      return el('li', { 'data-id': m.j }, Lobo.icono('skull'), ' ', T('n.murio', { j: nombreDe(m.j), c: t('causa.' + m.causa) }));
     }));
   }
 
@@ -332,10 +338,10 @@
     reiniciarSeleccion('d' + estado.noche + ':' + estado.pendientes.length + ':' + estado.votoHecho);
     var deNoche = estado.anuncio.filter(function (m) { return m.causa !== 'votacion'; }).map(function (m) { return nombreDe(m.j); });
     var textoAmanecer = deNoche.length ? T('guion.amanece_muertos', { n: deNoche.length, j: deNoche.join(', ') }) : T('guion.amanece_nadie');
-    var piezas = [el('section', { class: 'tarjeta' }, el('h2', null, '☀️ ', T('n.amanece')), guion([{ rot: null, txt: textoAmanecer }]), listaMuertes())];
+    var piezas = [el('section', { class: 'tarjeta' }, el('h2', null, Lobo.icono('sun'), ' ', T('n.amanece')), guion([{ rot: null, txt: textoAmanecer }]), listaMuertes())];
 
     if (p) {
-      var cuerpo = [el('h3', null, p.tipo === 'cazador' ? '🏹 ' : '🎖️ ', p.tipo === 'cazador' ? T('n.pend_cazador', { j: nombreDe(p.jugador) }) : T('n.pend_alguacil', { j: nombreDe(p.jugador) })),
+      var cuerpo = [el('h3', null, Lobo.icono(p.tipo === 'cazador' ? 'target' : 'medal'), ' ', p.tipo === 'cazador' ? T('n.pend_cazador', { j: nombreDe(p.jugador) }) : T('n.pend_alguacil', { j: nombreDe(p.jugador) })),
         guion([{ rot: null, txt: T(p.tipo === 'cazador' ? 'guion.cazador' : 'guion.alguacil', { j: nombreDe(p.jugador) }) }]),
         rejilla(vivos(), 1, true),
         el('button', { type: 'button', class: 'btn', id: 'resolver', onclick: function () { llamar('narrador:pendiente', { objetivo: ui.sel[0] || null }); } }, T('n.confirmar'))];
@@ -344,7 +350,7 @@
       var alg = estado.jugadores.filter(function (j) { return j.alguacil; })[0];
       if (!estado.votoHecho) {
         piezas.push(el('section', { class: 'tarjeta', id: 'seccion-alguacil' },
-          el('h3', null, '🎖️ ', T('n.alguacil_titulo')),
+          el('h3', null, Lobo.icono('medal'), ' ', T('n.alguacil_titulo')),
           el('p', null, alg ? T('n.alguacil_actual', { j: alg.nombre }) : T('n.alguacil_ninguno')),
           alg ? null : el('p', { class: 'pista' }, T('guion.alguacil_nombrar')),
           el('details', null,
@@ -354,14 +360,14 @@
           )
         ));
         piezas.push(el('section', { class: 'tarjeta', id: 'seccion-voto' },
-          el('h3', null, '🗳️ ', T('n.votacion')),
+          el('h3', null, Lobo.icono('check-circle'), ' ', T('n.votacion')),
           guion([{ rot: null, txt: T('guion.votacion') }]),
           el('p', { class: 'pista' }, T('n.votacion_ayuda')),
           rejilla(vivos(), 1, true),
           el('button', { type: 'button', class: 'btn peligro', id: 'votar', onclick: function () { llamar('narrador:votar', { objetivo: ui.sel[0] || null }); } }, ui.sel.length ? T('n.eliminar') : T('n.confirmar'))
         ));
       } else {
-        piezas.push(el('section', { class: 'centro' }, el('button', { type: 'button', class: 'btn grande', id: 'noche', onclick: function () { llamar('narrador:noche'); } }, '🌙 ', T('n.empezar_noche'))));
+        piezas.push(el('section', { class: 'centro' }, el('button', { type: 'button', class: 'btn grande', id: 'noche', onclick: function () { llamar('narrador:noche'); } }, Lobo.icono('moon'), ' ', T('n.empezar_noche'))));
       }
     }
     piezas.push(el('section', { class: 'tarjeta' }, tablaJugadores()));
@@ -389,13 +395,9 @@
       else if (estado.fase === 'dia') piezas = piezas.concat(pantallaDia());
       else if (estado.fase === 'final') piezas = piezas.concat(pantallaFinal());
     }
-    document.body.classList.toggle('es-noche', !!(estado && estado.fase === 'noche'));
-    var y = window.scrollY;
-    var enCodigo = document.activeElement && document.activeElement.id === 'codigo';
-    var pos = enCodigo ? document.activeElement.selectionStart : 0;
-    app.replaceChildren.apply(app, piezas);
-    window.scrollTo(0, y);
-    if (enCodigo) { var f = document.getElementById('codigo'); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch (e) { /* sin selección */ } } }
+    Lobo.nocheTema(!!(estado && estado.fase === 'noche'));
+    // Se compara con lo que hay en pantalla y solo se cambia lo que difiere: no se pierde el scroll, el foco, el cursor ni lo escrito
+    Lobo.pintarEn(app, piezas);
     pintarAviso();
   }
 

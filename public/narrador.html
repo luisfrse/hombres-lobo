@@ -2,22 +2,32 @@
 <html lang="ca">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0d1a">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0d1a2a">
   <title data-i18n-doc="app.doc_narrador">Homes llop · Narrador</title>
-  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/dc/fuentes/fuentes.css">
+  <link rel="stylesheet" href="/dc/tokens.css">
+  <link rel="stylesheet" href="/dc/base.css">
   <link rel="stylesheet" href="/lobo.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script src="/tema.js"></script>
 </head>
-<body class="narrador">
-  <header class="cab">
-    <h1 class="logo">🐺 <span data-i18n="app.nombre">Homes llop</span> <small data-i18n="n.titulo">Narrador</small></h1>
-    <div class="cab-idioma" data-lang-slot></div>
+<body class="dc-body narrador">
+  <header class="dc-header">
+    <a class="dc-brand" href="/"><span class="dc-brand__tile"><span class="dc-icon" data-icon="moon" aria-hidden="true"></span></span><span><span data-i18n="app.nombre">Homes llop</span> <small class="dc-muted-h" data-i18n="n.titulo">Narrador</small></span></a>
+    <div class="dc-header__actions"><div class="cab-idioma" data-lang-slot></div><div id="tema-slot"></div></div>
   </header>
-  <main id="app"></main>
+  <main id="app" class="lb-main"></main>
   <p class="pie"><a href="/reglas" target="_blank" rel="noopener" data-i18n="reg.enlace">Regles del joc</a></p>
   <div id="aviso" class="aviso" role="alert" hidden></div>
+  <script src="/dc/iconos/iconos.js"></script>
   <script src="/i18n.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/iconos-lobo.js"></script>
   <script src="/js/comun.js"></script>
   <script src="/js/narrador.js"></script>
 </body>

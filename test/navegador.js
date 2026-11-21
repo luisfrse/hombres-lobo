@@ -35,11 +35,15 @@ const errores = [];
   const sinDesborde = (p) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 
   // --- Administrador: crea un código desde el panel ---
-  const ctxAdmin = await browser.newContext({ httpCredentials: { username: 'admin', password: 'clave-de-prueba' }, viewport: { width: 1200, height: 800 } });
+  const ctxAdmin = await browser.newContext({ viewport: { width: 1200, height: 800 } });
   const adm = await ctxAdmin.newPage();
   adm.on('pageerror', (e) => errores.push('pageerror: ' + e.message));
   adm.on('console', (m) => { if (m.type() === 'error') errores.push('console: ' + m.text()); });
   await adm.goto(base + '/admin?lang=es');
+  // sin credenciales el navegador ve la pantalla de entrada comun (ya no el dialogo HTTP basica): se entra con la contraseña
+  await adm.waitForSelector('#dc-entrada input[type=password]');
+  await adm.fill('#dc-entrada input[type=password]', 'clave-de-prueba');
+  await adm.keyboard.press('Enter');
   await adm.waitForSelector('.vacio');
   await adm.fill('#in-etiqueta', 'Laura Prueba');
   await adm.click('#btn-crear');
@@ -223,8 +227,8 @@ const errores = [];
   // --- Revocar el código desde /admin cierra la partida abierta ---
   await adm.reload();
   await adm.waitForSelector('tr[data-id]');
-  adm.once('dialog', (d) => d.accept());
   await adm.click('[data-accion=revocar]');
+  await adm.click('dialog[open] [data-dlg=si]'); // diálogo propio (ya no confirm() nativo)
   await adm.waitForSelector('.etiqueta-estado.revocado');
   await jug[ald2].waitForSelector('text=La partida se ha cerrado'); // los jugadores son avisados
   await nar.waitForSelector('#crear'); // el narrador vuelve al inicio

@@ -262,7 +262,22 @@
   "guion.alguacil": "{j} era l'alguatzir: abans de morir designa el seu successor.",
   "guion.alguacil_nombrar": "Si encara no hi ha alguatzir: que es proposin candidats, voteu i marca'l aquí.",
   "guion.votacion": "Ara debateu: qui creieu que és un llop? Quan estigueu preparats, voteu a mà alçada. Qui tingui més vots queda eliminat; si hi ha empat, no s'elimina ningú.",
-  "guion.fin": "La partida ha acabat. Que cadascú ensenyi el seu rol i comenteu com ha anat."
+  "guion.fin": "La partida ha acabat. Que cadascú ensenyi el seu rol i comenteu com ha anat.",
+  "c.aceptar": "D'acord",
+  "tema.claro": "Mode clar",
+  "tema.oscuro": "Mode fosc",
+  "acc.quedan": "Et queden {n} intents.",
+  "acc.queda1": "Et queda 1 intent. Si falles, hauràs d'esperar.",
+  "acc.espera": "Massa intents. Torna-ho a provar d'aquí a {m} min.",
+  "n.confirm_cerrar_t": "Tancar la partida?",
+  "n.confirm_expulsar_t": "Treure el jugador?",
+  "ac.confirm_revocar_t": "Revocar el codi?",
+  "ac.confirm_borrar_t": "Esborrar el codi?",
+  "ac.salir": "Surt",
+  "ac.ir_narrador": "Anar al narrador",
+  "j.pin_ayuda": "El veus a la pantalla del narrador.",
+  "n.ring_paso": "Pas {i} de {n}",
+  "n.ring_jug": "jugadors"
  },
  "es": {
   "idioma": "Idioma",
@@ -522,7 +537,22 @@
   "guion.alguacil": "{j} era el alguacil: antes de morir designa a su sucesor.",
   "guion.alguacil_nombrar": "Si todavía no hay alguacil: que se propongan candidatos, votad y márcalo aquí.",
   "guion.votacion": "Ahora debatid: ¿quién creéis que es un lobo? Cuando estéis listos, votad a mano alzada. Quien tenga más votos queda eliminado; si hay empate, no se elimina a nadie.",
-  "guion.fin": "La partida ha terminado. Que cada uno enseñe su rol y comentad cómo ha ido."
+  "guion.fin": "La partida ha terminado. Que cada uno enseñe su rol y comentad cómo ha ido.",
+  "c.aceptar": "Aceptar",
+  "tema.claro": "Modo claro",
+  "tema.oscuro": "Modo oscuro",
+  "acc.quedan": "Te quedan {n} intentos.",
+  "acc.queda1": "Te queda 1 intento. Si fallas, tendrás que esperar.",
+  "acc.espera": "Demasiados intentos. Vuelve a probar dentro de {m} min.",
+  "n.confirm_cerrar_t": "¿Cerrar la partida?",
+  "n.confirm_expulsar_t": "¿Sacar al jugador?",
+  "ac.confirm_revocar_t": "¿Revocar el código?",
+  "ac.confirm_borrar_t": "¿Borrar el código?",
+  "ac.salir": "Salir",
+  "ac.ir_narrador": "Ir al narrador",
+  "j.pin_ayuda": "Lo ves en la pantalla del narrador.",
+  "n.ring_paso": "Paso {i} de {n}",
+  "n.ring_jug": "jugadores"
  }
 };
   var LANGS = ['ca', 'es'];
